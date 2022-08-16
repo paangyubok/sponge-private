@@ -24,7 +24,7 @@ class ByteStream {
     size_t _capacity;
     size_t _unread_idx;
     size_t _unassem_idx;
-    bool _ein;
+    bool _eif;
     bool _eof;
     size_t _total_write;
     size_t _total_read;

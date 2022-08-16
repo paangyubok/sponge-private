@@ -19,7 +19,7 @@ class StreamReassembler {
     size_t _capacity;    //!< The maximum number of bytes
     size_t _expect;
     std::map<size_t, std::string> _unassem_string;
-    bool _ein;
+    bool _eif;
     size_t _end_idx;
     
     void assemble();

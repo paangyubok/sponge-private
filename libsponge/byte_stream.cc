@@ -18,7 +18,7 @@ ByteStream::ByteStream(const size_t capacity):_buffer(capacity),
     _capacity(capacity), 
     _unread_idx(0), 
     _unassem_idx(0),
-    _ein(false),
+    _eif(false),
     _eof(false),
     _total_write(0),
     _total_read(0) { 
@@ -54,7 +54,7 @@ void ByteStream::pop_output(const size_t len) {
     size_t pop_len = min(len, _unassem_idx-_unread_idx);
     _unread_idx += pop_len;
     _total_read += pop_len;
-    if (buffer_empty() && _ein) {
+    if (buffer_empty() && _eif) {
         _eof = true;
     }
 }
@@ -67,20 +67,20 @@ std::string ByteStream::read(const size_t len) {
     string ret(&_buffer[_unread_idx], &_buffer[_unread_idx+read_len]);
     _unread_idx += read_len;
     _total_read += read_len;
-    if (buffer_empty() && _ein) {
+    if (buffer_empty() && _eif) {
         _eof = true;
     }
     return ret;
 }
 
 void ByteStream::end_input() {
-    _ein = true;
+    _eif = true;
     if (buffer_empty()){
         _eof = true;
     }
 }
 
-bool ByteStream::input_ended() const { return _ein; }
+bool ByteStream::input_ended() const { return _eif; }
 
 size_t ByteStream::buffer_size() const { return _unassem_idx-_unread_idx; }
 

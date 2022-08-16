@@ -20,7 +20,7 @@ StreamReassembler::StreamReassembler(const size_t capacity) :
     _capacity(capacity),
     _expect(0),
     _unassem_string(),
-    _ein(false),
+    _eif(false),
     _end_idx(0)
     {} 
 
@@ -35,7 +35,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         _unassem_string[index] = data;
     }
     if (eof) {
-        _ein = true;
+        _eif = true;
         _end_idx = index + data.size();
     }
     assemble();
@@ -66,7 +66,7 @@ void StreamReassembler::assemble() {
         assemed_node.push_back(idx);
     }
     
-    if (_ein && _expect >= _end_idx) {
+    if (_eif && _expect >= _end_idx) {
         _output.end_input();
     }
     for(auto idx : assemed_node) {
