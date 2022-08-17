@@ -34,10 +34,9 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     const auto crsn = wrap(checkpoint, isn);
     const auto diff = n - crsn;
-    const uint32_t floor = isn.raw_value();
     uint64_t ret{checkpoint};
     ret += diff;
-    if (ret < floor || (diff < 0 && ret > checkpoint)) {
+    if (diff < 0 && ret > checkpoint) {
         ret = checkpoint + static_cast<uint32_t>(diff);
     }
     return ret;
