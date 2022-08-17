@@ -1,7 +1,4 @@
 #include "wrapping_integers.hh"
-#include <algorithm>
-#include <cstdint>
-#include <cstdlib>
 
 // Dummy implementation of a 32-bit wrapping integer
 
