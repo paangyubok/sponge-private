@@ -76,18 +76,12 @@ void Timers<Index, Content>::restart_all_timers(size_t now_time) {
 template<typename Index, typename Content>
 void Timers<Index, Content>::restart_timers_except_min_index(size_t now_time) {
     auto idx_cmp = [](const TimeNode& a, const TimeNode& b) {return a.index < b.index;};
-    auto min_node = min_element(_timer_list.begin(), _timer_list.end(), idx_cmp);
-    // auto restart_func = [now_time, min_node](typename decltype(_timer_list)::iterator node){
-    //     if (min_node != node){
-    //         node->time = now_time;
-    //     }
-    // };
-    // for_each(_timer_list.begin(), _timer_list.end(), restart_func);
-    for (auto& node : _timer_list){
-        if(node.index != min_node->index){
+    auto min_idx = min_element(_timer_list.begin(), _timer_list.end(), idx_cmp)->index;
+    for_each(_timer_list.begin(), _timer_list.end(), [min_idx, now_time](TimeNode& node){
+        if (node.index != min_idx) {
             node.time = now_time;
         }
-    }
+    });
 }
 
 //! \param[in] capacity the capacity of the outgoing byte stream
@@ -138,13 +132,19 @@ void TCPSender::fill_window() {
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) { 
     auto ack_seqno = unwrap(ackno, _isn, _next_seqno);
     if (ack_seqno <= _next_seqno) {
-        // _ack_seqno = max(_ack_seqno, ack_seqno);
-        // if (ack_seqno == _next_seqno || ack_seqno == _ack_seqno) {
-        //     _window_size.emplace(
-        //         window_size > 0 ? window_size : 1);
-        // }
-        // _timers.remove_timer(ack_seqno);
         auto is_remove = _timers.remove_timer_before_index(ack_seqno);
+        // is_remove is true: one or more tcp segments have received.
+        // Otherwise, ack is repeat or not the full segment has received, 
+        // maybe it need to resend the segment.
+        if (is_remove) {
+            _timers.restart_all_timers(_now_time);
+        } else {
+            _timers.restart_timers_except_min_index(_now_time);
+        }
+       
+        // when at least one segment has received, set the window size.
+        // `_ack_seqno == ack_seqno` means that a segment with bigger index has
+        // received. 
         if(is_remove || _ack_seqno == ack_seqno) {
             _ack_seqno = ack_seqno;
             _is_zero_win = window_size == 0;
@@ -152,17 +152,9 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
             _window_size.emplace(
                 actual_win_size > 0 ? actual_win_size : 1);
         }
-        // if (is_remove) {
-            _rto = _initial_retransmission_timeout;
-            if (is_remove) {
-                _timers.restart_all_timers(_now_time);
-            } else {
-                _timers.restart_timers_except_min_index(_now_time);
-            }
-            // _timers.restart_timers(_now_time, ack_seqno);
-            _timers.set_timeout(_rto);
-            _retx = 0;
-        // }
+        _rto = _initial_retransmission_timeout;
+        _timers.set_timeout(_rto);
+        _retx = 0;
     }
 }
 
@@ -176,7 +168,6 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     if (expired_seg.has_value()){
         _segments_out.emplace(expired_seg.value());
         _timers.start_timer(_now_time, index, expired_seg.value());
-        // if(!_window_size.has_value() || _window_size.value() > 0) {
         if (!_is_zero_win) {
             _rto <<= 1;
             _timers.set_timeout(_rto);
@@ -188,19 +179,12 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
 
 unsigned int TCPSender::consecutive_retransmissions() const { return _retx; }
 
+// Be invoked iff send ack segment 
 void TCPSender::send_empty_segment() {
-    auto window_size = _window_size.value_or(0);
-    if (window_size > 0) {
-        TCPSegment seg;
-        seg.header().seqno = next_seqno();
-        // seg.header().syn = _syn;
-        // seg.header().fin = _stream.eof();
-        _segments_out.emplace(seg);
-
-        _next_seqno += seg.length_in_sequence_space(); 
-        _timers.start_timer(_now_time, _next_seqno, seg);
-        window_size -= seg.length_in_sequence_space();
-        _window_size.emplace(window_size);
-        // _syn = false;
-    }
+    // no payload or syn/fin so it does not need to consider window size.
+    TCPSegment seg;
+    seg.header().seqno = next_seqno();
+    _segments_out.emplace(seg);
+    _next_seqno += seg.length_in_sequence_space(); 
+    _timers.start_timer(_now_time, _next_seqno, seg);
 }
