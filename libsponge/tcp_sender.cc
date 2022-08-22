@@ -186,5 +186,5 @@ void TCPSender::send_empty_segment() {
     seg.header().seqno = next_seqno();
     _segments_out.emplace(seg);
     _next_seqno += seg.length_in_sequence_space(); 
-    _timers.start_timer(_now_time, _next_seqno, seg);
+    // _timers.start_timer(_now_time, _next_seqno, seg);
 }
