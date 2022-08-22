@@ -2,9 +2,12 @@
 #define SPONGE_LIBSPONGE_TCP_FACTORED_HH
 
 #include "tcp_config.hh"
+#include "tcp_header.hh"
 #include "tcp_receiver.hh"
 #include "tcp_sender.hh"
 #include "tcp_state.hh"
+#include <cstddef>
+#include <functional>
 
 //! \brief A complete endpoint of a TCP connection
 class TCPConnection {
@@ -20,8 +23,17 @@ class TCPConnection {
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
-
-  public:
+    bool _is_rst{false};
+    bool _is_fin{false};
+    size_t _now_time{0};
+    size_t _last_receive_time{0};
+    
+    void set_ack_everytime(TCPHeader&);
+    void check_is_fin(TCPHeader&);
+    void move_all_segments_to_out(std::function<void(TCPHeader&)> edit_header = [](TCPHeader&){}); 
+    bool check_is_active() const;
+    
+    public:
     //! \name "Input" interface for the writer
     //!@{
 
