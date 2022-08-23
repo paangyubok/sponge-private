@@ -162,7 +162,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 void TCPSender::tick(const size_t ms_since_last_tick) { 
     _now_time += ms_since_last_tick;
     
-    uint64_t index;
+    uint64_t index{0};
     auto expired_seg = _timers.expired_with_min_index(_now_time, &index);
 
     if (expired_seg.has_value()){
