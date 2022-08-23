@@ -66,13 +66,13 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     }
     
     _receiver.segment_received(seg);
+    if (!_is_fin) {
+        _linger_after_streams_finish = !_receiver.stream_out().input_ended();
+    }
     
     if (seg.header().ack) {
         _sender.ack_received(seg.header().ackno, seg.header().win);
-        if (!_sender.stream_in().buffer_empty()) {
-            _sender.fill_window();
-            move_all_segments_to_out();
-        }
+        _sender.fill_window();
     }
 
     if (_receiver.ackno().has_value() && 
@@ -82,12 +82,9 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         if (_sender.segments_out().empty()){
             _sender.send_empty_segment();
         }
-        move_all_segments_to_out();
     }
     
-    if (!_is_fin) {
-        _linger_after_streams_finish = !_receiver.stream_out().input_ended();
-    }
+    move_all_segments_to_out();
 }
 
 bool TCPConnection::active() const { return check_is_active(); }
@@ -130,7 +127,6 @@ TCPConnection::~TCPConnection() {
     try {
         if (active()) {
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
-
             // Your code here: need to send a RST segment to the peer
             _sender.send_empty_segment();
             move_all_segments_to_out([](TCPHeader& header){
