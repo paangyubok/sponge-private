@@ -70,7 +70,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         _linger_after_streams_finish = !_receiver.stream_out().input_ended();
     }
     
-    if (seg.header().ack) {
+    if (_receiver.ackno().has_value() && seg.header().ack) {
         _sender.ack_received(seg.header().ackno, seg.header().win);
         _sender.fill_window();
     }
