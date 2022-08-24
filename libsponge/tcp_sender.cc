@@ -148,9 +148,8 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         if(is_remove || _ack_seqno == ack_seqno) {
             _ack_seqno = ack_seqno;
             _is_zero_win = window_size == 0;
-            const auto actual_win_size = window_size - bytes_in_flight();
-            _window_size.emplace(
-                actual_win_size > 0 ? actual_win_size : 1);
+            const auto actual_win_size = window_size >= bytes_in_flight() ? window_size - bytes_in_flight() : 0;
+            _window_size.emplace(_is_zero_win ? 1 : actual_win_size);
         }
         _rto = _initial_retransmission_timeout;
         _timers.set_timeout(_rto);
