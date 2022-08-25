@@ -33,8 +33,9 @@ NetworkInterface::NetworkInterface(const EthernetAddress &ethernet_address, cons
 }
 
 inline bool NetworkInterface::is_ip_available(uint32_t ip) {
-    return _ip2eth.find(ip) != _ip2eth.end() && 
-        (_now_time - _ip2eth[ip].recv_time <= 30000); 
+    return _ip2eth.find(ip) != _ip2eth.end() 
+           && _ip2eth[ip].is_recv_time
+           && (_now_time - _ip2eth[ip].time <= 30000); 
 }
 
 void NetworkInterface::arp_request(uint32_t ip) {
@@ -90,9 +91,12 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
         _frames_out.emplace(move(frame));
     } else {
         _unsend_frames[next_hop_ip].emplace_back(move(frame)); 
-        if (_ip2eth.find(next_hop_ip) == _ip2eth.end() || 
-            _now_time - _ip2eth[next_hop_ip].request_time > 5000) {
+        if (_ip2eth.find(next_hop_ip) == _ip2eth.end() 
+            || _ip2eth[next_hop_ip].is_recv_time 
+            || _now_time - _ip2eth[next_hop_ip].time > 5000) {
             arp_request(next_hop_ip);
+            _ip2eth[next_hop_ip].is_recv_time = false;
+            _ip2eth[next_hop_ip].time = _now_time;
         }
     }
 }
@@ -114,7 +118,8 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
         if (arp_msg.parse(frame.payload()) == ParseResult::NoError) {
             const auto sender_ip = arp_msg.sender_ip_address;
             _ip2eth[sender_ip].addr = arp_msg.sender_ethernet_address;
-            _ip2eth[sender_ip].recv_time = _now_time;
+            _ip2eth[sender_ip].time = _now_time;
+            _ip2eth[sender_ip].is_recv_time = true;
             if (arp_msg.opcode == ARPMessage::OPCODE_REPLY) {
                 send_datagram_in_tmp(sender_ip);
             }

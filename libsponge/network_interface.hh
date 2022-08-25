@@ -46,9 +46,9 @@ class NetworkInterface {
     std::queue<EthernetFrame> _frames_out{};
     std::unordered_map<uint32_t, std::deque<EthernetFrame>> _unsend_frames{};
     using EthernetAddressRecord = struct _ {
-      size_t recv_time{0};
-      size_t request_time{0};
+      size_t time{0};
       EthernetAddress addr{0};
+      bool is_recv_time{false};
     };
     std::unordered_map<uint32_t, EthernetAddressRecord> _ip2eth{};
     size_t _now_time{0};
