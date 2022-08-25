@@ -2,11 +2,16 @@
 #define SPONGE_LIBSPONGE_NETWORK_INTERFACE_HH
 
 #include "ethernet_frame.hh"
+#include "ethernet_header.hh"
 #include "tcp_over_ip.hh"
 #include "tun.hh"
 
+#include <cstddef>
+#include <cstdint>
+#include <deque>
 #include <optional>
 #include <queue>
+#include <unordered_map>
 
 //! \brief A "network interface" that connects IP (the internet layer, or network layer)
 //! with Ethernet (the network access layer, or link layer).
@@ -39,7 +44,19 @@ class NetworkInterface {
 
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
+    std::unordered_map<uint32_t, std::deque<EthernetFrame>> _unsend_frames{};
+    using EthernetAddressRecord = struct _ {
+      size_t recv_time{0};
+      size_t request_time{0};
+      EthernetAddress addr{0};
+    };
+    std::unordered_map<uint32_t, EthernetAddressRecord> _ip2eth{};
+    size_t _now_time{0};
 
+    inline bool is_ip_available(uint32_t ip);
+    void arp_request(uint32_t ip);
+    void arp_reply(uint32_t, const EthernetAddress&);
+    void send_datagram_in_tmp(uint32_t ip);
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
     NetworkInterface(const EthernetAddress &ethernet_address, const Address &ip_address);

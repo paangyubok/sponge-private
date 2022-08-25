@@ -25,7 +25,7 @@ void get_URL(const string &host, const string &path) {
     string http_content = http_format.str();
 
     Address addr(host, "http");
-    CS144TCPSocket conn;
+    FullStackSocket conn;
     conn.connect(addr);
     conn.write(http_content);
     string respond, tmp;
