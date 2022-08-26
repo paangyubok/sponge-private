@@ -33,9 +33,7 @@ NetworkInterface::NetworkInterface(const EthernetAddress &ethernet_address, cons
 }
 
 inline bool NetworkInterface::is_ip_available(uint32_t ip) {
-    return _ip2eth.find(ip) != _ip2eth.end() 
-           && _ip2eth[ip].is_recv_time
-           && (_now_time - _ip2eth[ip].time <= 30000); 
+    return _ip2eth.find(ip) != _ip2eth.end() && _ip2eth[ip].is_recv_time && (_now_time - _ip2eth[ip].time <= 30000);
 }
 
 void NetworkInterface::arp_request(uint32_t ip) {
@@ -52,7 +50,7 @@ void NetworkInterface::arp_request(uint32_t ip) {
     _frames_out.emplace(move(frame));
 }
 
-void NetworkInterface::arp_reply(uint32_t target_ip, const EthernetAddress& target_eth_addr) {
+void NetworkInterface::arp_reply(uint32_t target_ip, const EthernetAddress &target_eth_addr) {
     ARPMessage arp_payload;
     arp_payload.sender_ethernet_address = _ethernet_address;
     arp_payload.sender_ip_address = _ip_address.ipv4_numeric();
@@ -68,8 +66,8 @@ void NetworkInterface::arp_reply(uint32_t target_ip, const EthernetAddress& targ
 }
 
 void NetworkInterface::send_datagram_in_tmp(uint32_t ip) {
-    auto& unsend_dgrams = _unsend_frames[ip];
-    for(auto& dgram : unsend_dgrams){
+    auto &unsend_dgrams = _unsend_frames[ip];
+    for (auto &dgram : unsend_dgrams) {
         dgram.header().dst = _ip2eth[ip].addr;
         _frames_out.emplace(move(dgram));
     }
@@ -90,10 +88,9 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
         frame.header().dst = _ip2eth[next_hop_ip].addr;
         _frames_out.emplace(move(frame));
     } else {
-        _unsend_frames[next_hop_ip].emplace_back(move(frame)); 
-        if (_ip2eth.find(next_hop_ip) == _ip2eth.end() 
-            || _ip2eth[next_hop_ip].is_recv_time 
-            || _now_time - _ip2eth[next_hop_ip].time > 5000) {
+        _unsend_frames[next_hop_ip].emplace_back(move(frame));
+        if (_ip2eth.find(next_hop_ip) == _ip2eth.end() || _ip2eth[next_hop_ip].is_recv_time ||
+            _now_time - _ip2eth[next_hop_ip].time > 5000) {
             arp_request(next_hop_ip);
             _ip2eth[next_hop_ip].is_recv_time = false;
             _ip2eth[next_hop_ip].time = _now_time;
@@ -103,17 +100,16 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
 
 //! \param[in] frame the incoming Ethernet frame
 optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &frame) {
-    if (frame.header().dst != _ethernet_address && frame.header().dst != ETHERNET_BROADCAST) 
+    if (frame.header().dst != _ethernet_address && frame.header().dst != ETHERNET_BROADCAST)
         return {};
-    
+
     const auto frame_type = frame.header().type;
     if (frame_type == EthernetHeader::TYPE_IPv4) {
         InternetDatagram dgram;
         if (dgram.parse(frame.payload()) == ParseResult::NoError) {
             return optional(dgram);
         }
-    }
-    else if (frame_type == EthernetHeader::TYPE_ARP) {
+    } else if (frame_type == EthernetHeader::TYPE_ARP) {
         ARPMessage arp_msg;
         if (arp_msg.parse(frame.payload()) == ParseResult::NoError) {
             const auto sender_ip = arp_msg.sender_ip_address;
@@ -122,9 +118,8 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
             _ip2eth[sender_ip].is_recv_time = true;
             if (arp_msg.opcode == ARPMessage::OPCODE_REPLY) {
                 send_datagram_in_tmp(sender_ip);
-            }
-            else if (arp_msg.opcode == ARPMessage::OPCODE_REQUEST){
-                if (arp_msg.target_ip_address == _ip_address.ipv4_numeric()){
+            } else if (arp_msg.opcode == ARPMessage::OPCODE_REQUEST) {
+                if (arp_msg.target_ip_address == _ip_address.ipv4_numeric()) {
                     arp_reply(arp_msg.sender_ip_address, arp_msg.sender_ethernet_address);
                 }
             }
@@ -134,6 +129,4 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
-void NetworkInterface::tick(const size_t ms_since_last_tick) {
-    _now_time += ms_since_last_tick;
-}
+void NetworkInterface::tick(const size_t ms_since_last_tick) { _now_time += ms_since_last_tick; }

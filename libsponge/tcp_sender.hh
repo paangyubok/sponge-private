@@ -16,27 +16,25 @@
 
 // Timer
 template <typename Index, typename Content>
-class Timers{
-  using TimeNode = struct __time_node{
-    size_t time{};
-    Index index{};
-    Content content{};
-  };
-  size_t _timeout;
-  std::deque<TimeNode> _timer_list{};
+class Timers {
+    using TimeNode = struct __time_node {
+        size_t time{};
+        Index index{};
+        Content content{};
+    };
+    size_t _timeout;
+    std::deque<TimeNode> _timer_list{};
 
   public:
-  Timers<Index, Content>(size_t timeout)
-    : _timeout(timeout)
-    {}
-  void set_timeout(size_t timeout) {_timeout = timeout;}
-  size_t get_timeout() {return _timeout;}
+    Timers<Index, Content>(size_t timeout) : _timeout(timeout) {}
+    void set_timeout(size_t timeout) { _timeout = timeout; }
+    size_t get_timeout() { return _timeout; }
 
-  void start_timer(size_t time, const Index& index, const Content& content);
-  bool remove_timer_before_index(const Index& index);
-  std::optional<Content> expired_with_min_index(size_t now_time, Index *ret_idx);
-  void restart_all_timers(size_t now_time);
-  void restart_timers_except_min_index(size_t now_time);
+    void start_timer(size_t time, const Index &index, const Content &content);
+    bool remove_timer_before_index(const Index &index);
+    std::optional<Content> expired_with_min_index(size_t now_time, Index *ret_idx);
+    void restart_all_timers(size_t now_time);
+    void restart_timers_except_min_index(size_t now_time);
 };
 
 //! \brief The "sender" part of a TCP implementation.
@@ -59,7 +57,7 @@ class TCPSender {
 
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
-    
+
     Timers<uint64_t, TCPSegment> _timers;
 
     //! the (absolute) sequence number for the next byte to be sent
@@ -71,6 +69,7 @@ class TCPSender {
     bool _is_zero_win{false};
     bool _syn{true};
     bool _fin{false};
+
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,

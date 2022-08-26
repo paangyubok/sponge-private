@@ -6,6 +6,7 @@
 #include "tcp_receiver.hh"
 #include "tcp_sender.hh"
 #include "tcp_state.hh"
+
 #include <cstddef>
 #include <functional>
 
@@ -27,13 +28,13 @@ class TCPConnection {
     bool _is_fin{false};
     size_t _now_time{0};
     size_t _last_receive_time{0};
-    
-    void set_ack_everytime(TCPHeader&);
-    void check_is_fin(TCPHeader&);
-    void move_all_segments_to_out(std::function<void(TCPHeader&)> edit_header = [](TCPHeader&){}); 
+
+    void set_ack_everytime(TCPHeader &);
+    void check_is_fin(TCPHeader &);
+    void move_all_segments_to_out(std::function<void(TCPHeader &)> edit_header = [](TCPHeader &) {});
     bool check_is_active() const;
-    
-    public:
+
+  public:
     //! \name "Input" interface for the writer
     //!@{
 

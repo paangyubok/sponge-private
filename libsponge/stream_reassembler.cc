@@ -1,4 +1,5 @@
 #include "stream_reassembler.hh"
+
 #include <cstddef>
 #include <utility>
 #include <vector>
@@ -15,14 +16,8 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-StreamReassembler::StreamReassembler(const size_t capacity) :
-    _output(capacity),
-    _capacity(capacity),
-    _expect(0),
-    _unassem_string(),
-    _eif(false),
-    _end_idx(0)
-    {} 
+StreamReassembler::StreamReassembler(const size_t capacity)
+    : _output(capacity), _capacity(capacity), _expect(0), _unassem_string(), _eif(false), _end_idx(0) {}
 
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
@@ -31,7 +26,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     if (index + data.size() < _expect) {
         return;
     }
-    if (data.size() > _unassem_string[index].size()){
+    if (data.size() > _unassem_string[index].size()) {
         _unassem_string[index] = data;
     }
     if (eof) {
@@ -44,11 +39,12 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 void StreamReassembler::assemble() {
     vector<size_t> assemed_node;
     pair<bool, pair<size_t, string>> remain_string{false, {}};
-    for (auto& node : _unassem_string) {
+    for (auto &node : _unassem_string) {
         auto idx = node.first;
-        auto& sub_string = node.second;
-        if (idx > _expect) break;
-        
+        auto &sub_string = node.second;
+        if (idx > _expect)
+            break;
+
         if (idx + sub_string.size() > _expect) {
             auto write_idx = _expect - idx;
             auto write_string = sub_string.substr(write_idx);
@@ -60,16 +56,16 @@ void StreamReassembler::assemble() {
                 auto write_len = sub_write_string.size();
                 _output.write(sub_write_string);
                 _expect += write_len;
-                remain_string = make_pair(true, make_pair(idx+write_len, write_string.substr(write_len)));
+                remain_string = make_pair(true, make_pair(idx + write_len, write_string.substr(write_len)));
             }
         }
         assemed_node.push_back(idx);
     }
-    
+
     if (_eif && _expect >= _end_idx) {
         _output.end_input();
     }
-    for(auto idx : assemed_node) {
+    for (auto idx : assemed_node) {
         _unassem_string.erase(idx);
     }
     if (remain_string.first) {
@@ -77,23 +73,21 @@ void StreamReassembler::assemble() {
     }
 }
 
-size_t StreamReassembler::unassembled_bytes() const { 
+size_t StreamReassembler::unassembled_bytes() const {
     size_t ret(0);
     size_t b(0), e(0);
-    for(auto& node : _unassem_string){
+    for (auto &node : _unassem_string) {
         auto idx = node.first;
-        const auto& sub_string = node.second;
-        
+        const auto &sub_string = node.second;
+
         if (idx > e) {
             ret += e - b;
             b = idx;
         }
-        e = max(e, idx+sub_string.size());
+        e = max(e, idx + sub_string.size());
     }
     ret += e - b;
     return ret;
 }
 
-bool StreamReassembler::empty() const { 
-    return _output.buffer_empty();
-}
+bool StreamReassembler::empty() const { return _output.buffer_empty(); }

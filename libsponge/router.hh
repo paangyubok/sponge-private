@@ -5,10 +5,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <queue>
 #include <unordered_map>
-#include <map>
 
 //! \brief A wrapper for NetworkInterface that makes the host-side
 //! interface asynchronous: instead of returning received datagrams
@@ -56,7 +56,7 @@ class Router {
     //! Send a single datagram from the appropriate outbound interface to the next hop,
     //! as specified by the route with the longest prefix_length that matches the
     //! datagram's destination address.
-    std::optional<NextHop> match_ip (uint32_t ip) const;
+    std::optional<NextHop> match_ip(uint32_t ip) const;
     void route_one_datagram(InternetDatagram &dgram);
 
   public:

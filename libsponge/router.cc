@@ -1,4 +1,5 @@
 #include "router.hh"
+
 #include "address.hh"
 
 #include <cstdint>
@@ -22,12 +23,10 @@ using namespace std;
 template <typename... Targs>
 void DUMMY_CODE(Targs &&... /* unused */) {}
 
-inline uint32_t mask(uint8_t prefix_length) {
-    return ~(~0u >> prefix_length);
-}
+inline uint32_t mask(uint8_t prefix_length) { return ~(~0u >> prefix_length); }
 
 inline optional<Router::NextHop> Router::match_ip(uint32_t ip) const {
-    for(auto p = _router_table.rbegin(); p != _router_table.rend(); p++) {
+    for (auto p = _router_table.rbegin(); p != _router_table.rend(); p++) {
         const auto prefix_length = p->first;
         const auto rules = p->second;
         auto match_rule = rules.find(ip & mask(prefix_length));
@@ -60,12 +59,13 @@ void Router::route_one_datagram(InternetDatagram &dgram) {
     const auto dst_ip = dgram.header().dst;
     Address next_hop = Address::from_ipv4_numeric(dst_ip);
     auto match_rule = match_ip(dst_ip);
-    if (!match_rule.has_value() || dgram.header().ttl < 2) return;
+    if (!match_rule.has_value() || dgram.header().ttl < 2)
+        return;
     dgram.header().ttl--;
-    if (match_rule->next_hop.has_value()){
+    if (match_rule->next_hop.has_value()) {
         next_hop = match_rule->next_hop.value();
     }
-    
+
     interface(match_rule->interface_num).send_datagram(dgram, next_hop);
 }
 

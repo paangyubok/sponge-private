@@ -46,17 +46,18 @@ class NetworkInterface {
     std::queue<EthernetFrame> _frames_out{};
     std::unordered_map<uint32_t, std::deque<EthernetFrame>> _unsend_frames{};
     using EthernetAddressRecord = struct _ {
-      size_t time{0};
-      EthernetAddress addr{0};
-      bool is_recv_time{false};
+        size_t time{0};
+        EthernetAddress addr{0};
+        bool is_recv_time{false};
     };
     std::unordered_map<uint32_t, EthernetAddressRecord> _ip2eth{};
     size_t _now_time{0};
 
     inline bool is_ip_available(uint32_t ip);
     void arp_request(uint32_t ip);
-    void arp_reply(uint32_t, const EthernetAddress&);
+    void arp_reply(uint32_t, const EthernetAddress &);
     void send_datagram_in_tmp(uint32_t ip);
+
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
     NetworkInterface(const EthernetAddress &ethernet_address, const Address &ip_address);

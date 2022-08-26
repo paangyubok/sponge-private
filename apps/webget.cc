@@ -29,12 +29,12 @@ void get_URL(const string &host, const string &path) {
     conn.connect(addr);
     conn.write(http_content);
     string respond, tmp;
-    do{
+    do {
         tmp = conn.read();
         respond += tmp;
-    }while(!conn.eof());
+    } while (!conn.eof());
     cout << respond;
-	conn.wait_until_closed();
+    conn.wait_until_closed();
 }
 
 int main(int argc, char *argv[]) {

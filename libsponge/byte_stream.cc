@@ -1,6 +1,7 @@
 #include "byte_stream.hh"
-#include <cstddef>
+
 #include <algorithm>
+#include <cstddef>
 
 // Dummy implementation of a flow-controlled in-memory byte stream.
 
@@ -14,26 +15,27 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-ByteStream::ByteStream(const size_t capacity):_buffer(capacity), 
-    _capacity(capacity), 
-    _unread_idx(0), 
-    _unassem_idx(0),
-    _eif(false),
-    _eof(false),
-    _total_write(0),
-    _total_read(0) { 
-    DUMMY_CODE(capacity); 
+ByteStream::ByteStream(const size_t capacity)
+    : _buffer(capacity)
+    , _capacity(capacity)
+    , _unread_idx(0)
+    , _unassem_idx(0)
+    , _eif(false)
+    , _eof(false)
+    , _total_write(0)
+    , _total_read(0) {
+    DUMMY_CODE(capacity);
 }
 
 size_t ByteStream::write(const string &data) {
     size_t need_write = data.size();
     if (_capacity - _unassem_idx < need_write) {
-       copy(_buffer.begin()+_unread_idx, _buffer.begin()+_unassem_idx, _buffer.begin());
-       _unassem_idx -= _unread_idx;
-       _unread_idx = 0; 
+        copy(_buffer.begin() + _unread_idx, _buffer.begin() + _unassem_idx, _buffer.begin());
+        _unassem_idx -= _unread_idx;
+        _unread_idx = 0;
     }
     size_t write_len = min(data.size(), _capacity - _unassem_idx);
-    copy(data.begin(), data.begin() + write_len, _buffer.begin()+_unassem_idx);
+    copy(data.begin(), data.begin() + write_len, _buffer.begin() + _unassem_idx);
     _unassem_idx += write_len;
     _total_write += write_len;
     return write_len;
@@ -45,13 +47,13 @@ string ByteStream::peek_output(const size_t len) const {
     if (read_len == 0) {
         return {};
     }
-    string ret(&_buffer[_unread_idx], &_buffer[_unread_idx+read_len]);
+    string ret(&_buffer[_unread_idx], &_buffer[_unread_idx + read_len]);
     return ret;
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
-    size_t pop_len = min(len, _unassem_idx-_unread_idx);
+    size_t pop_len = min(len, _unassem_idx - _unread_idx);
     _unread_idx += pop_len;
     _total_read += pop_len;
     if (buffer_empty() && _eif) {
@@ -63,8 +65,9 @@ void ByteStream::pop_output(const size_t len) {
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
     size_t read_len = min(len, _unassem_idx - _unread_idx);
-    if (read_len == 0) return {};
-    string ret(&_buffer[_unread_idx], &_buffer[_unread_idx+read_len]);
+    if (read_len == 0)
+        return {};
+    string ret(&_buffer[_unread_idx], &_buffer[_unread_idx + read_len]);
     _unread_idx += read_len;
     _total_read += read_len;
     if (buffer_empty() && _eif) {
@@ -75,14 +78,14 @@ std::string ByteStream::read(const size_t len) {
 
 void ByteStream::end_input() {
     _eif = true;
-    if (buffer_empty()){
+    if (buffer_empty()) {
         _eof = true;
     }
 }
 
 bool ByteStream::input_ended() const { return _eif; }
 
-size_t ByteStream::buffer_size() const { return _unassem_idx-_unread_idx; }
+size_t ByteStream::buffer_size() const { return _unassem_idx - _unread_idx; }
 
 bool ByteStream::buffer_empty() const { return _unread_idx == _unassem_idx; }
 
@@ -92,4 +95,4 @@ size_t ByteStream::bytes_written() const { return _total_write; }
 
 size_t ByteStream::bytes_read() const { return _total_read; }
 
-size_t ByteStream::remaining_capacity() const { return _capacity-(_unassem_idx-_unread_idx); }
+size_t ByteStream::remaining_capacity() const { return _capacity - (_unassem_idx - _unread_idx); }

@@ -5,9 +5,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
@@ -21,7 +21,7 @@ class StreamReassembler {
     std::map<size_t, std::string> _unassem_string;
     bool _eif;
     size_t _end_idx;
-    
+
     void assemble();
 
   public:
