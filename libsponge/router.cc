@@ -31,8 +31,6 @@ inline optional<Router::NextHop> Router::match_ip(uint32_t ip) const {
         const auto prefix_length = p->first;
         const auto rules = p->second;
         auto match_rule = rules.find(ip & mask(prefix_length));
-        cerr << "Match next hop: " << Address::from_ipv4_numeric(ip & mask(prefix_length)).to_string()
-            << "/" << static_cast<uint32_t>(prefix_length) << endl;
         if (match_rule != rules.end()) {
             return optional(match_rule->second);
         }
