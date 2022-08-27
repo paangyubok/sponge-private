@@ -23,46 +23,37 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 using namespace std;
 
 template <typename Index, typename Content>
-void Timers<Index, Content>::start_timer(size_t time, const Index& index, const Content& content) {
-    _timer_list.emplace_back(TimeNode{time, index, content});
+void Timers<Index, Content>::start_new_timer(size_t time, const Index& index, const Content& content) {
+    _timer_list.emplace_back(time, index, content);
+    // auto pos = lower_bound(_timer_list.begin(), _timer_list.end(), TimeNode(index));
+    // _timer_list.insert(pos, TimeNode{time, index, content});
+}
+
+template <typename Index, typename Content>
+void Timers<Index, Content>::start_old_timer(size_t time, const Index &index, const Content &content) {
+    _timer_list.emplace_front(time, index, content);
+    // start_new_timer(time, index, content);
 }
 
 template <typename Index, typename Content>
 bool Timers<Index, Content>::remove_timer_before_index(const Index& index) {
-    auto timenode_cmp_by_index = [&index](const TimeNode& node){
-        return node.index <= index;
-    };
-    auto new_end = remove_if(_timer_list.begin(), _timer_list.end(), 
-        timenode_cmp_by_index);
-    bool ret = new_end != _timer_list.end();
-    if (ret) {
-        _timer_list.resize(new_end - _timer_list.begin());
-    }
+    auto pos = upper_bound(_timer_list.begin(), _timer_list.end(), TimeNode(index));
+    // auto pos = _timer_list.begin();
+    // for(; pos != _timer_list.end() && pos->index <= index; ++pos);
+    bool ret = (pos != _timer_list.begin());
+    _timer_list.erase(_timer_list.begin(), pos);
     return ret;
 }
 
 template <typename Index, typename Content>
 optional<Content> Timers<Index, Content>::expired_with_min_index(size_t now_time, Index *ret_idx) {
+    if (_timer_list.empty()) return {};
     optional<Content> ret;
-    auto timenode_cmp_by_time = [now_time, this](const TimeNode& node){
-        return now_time - node.time >= this->_timeout;
-    };
-    bool is_first(true);
-    auto ret_p = _timer_list.end();
-    for(auto p = _timer_list.begin(); p != _timer_list.end(); p++){
-        const TimeNode& node = *p;
-        if (timenode_cmp_by_time(node)){
-            if (is_first || node.index < *ret_idx){
-                *ret_idx = node.index;
-                ret_p = p;
-                is_first = false;
-            }
-        }
-    }
-    
-    if (ret_p != _timer_list.end()){
-        ret.emplace(ret_p->content);
-        _timer_list.erase(ret_p);
+    auto& the_first = _timer_list.front();
+    if (now_time - the_first.time >= _timeout){
+        ret.emplace(the_first.content);
+        *ret_idx = the_first.index;
+        _timer_list.pop_front();
     }
     return ret;
 }
@@ -75,12 +66,9 @@ void Timers<Index, Content>::restart_all_timers(size_t now_time) {
 
 template<typename Index, typename Content>
 void Timers<Index, Content>::restart_timers_except_min_index(size_t now_time) {
-    auto idx_cmp = [](const TimeNode& a, const TimeNode& b) {return a.index < b.index;};
-    auto min_idx = min_element(_timer_list.begin(), _timer_list.end(), idx_cmp)->index;
-    for_each(_timer_list.begin(), _timer_list.end(), [min_idx, now_time](TimeNode& node){
-        if (node.index != min_idx) {
-            node.time = now_time;
-        }
+    if (_timer_list.empty()) return;
+    for_each(_timer_list.begin()+1, _timer_list.end(), [now_time](TimeNode& node){
+        node.time = now_time;
     });
 }
 
@@ -116,7 +104,7 @@ void TCPSender::fill_window() {
         _segments_out.emplace(seg);
 
         _next_seqno += seg.length_in_sequence_space();
-        _timers.start_timer(_now_time, _next_seqno, seg);
+        _timers.start_new_timer(_now_time, _next_seqno, seg);
 
         window_size -= seg.length_in_sequence_space();
         remain_size -= payload_size;
@@ -166,7 +154,7 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
 
     if (expired_seg.has_value()){
         _segments_out.emplace(expired_seg.value());
-        _timers.start_timer(_now_time, index, expired_seg.value());
+        _timers.start_old_timer(_now_time, index, expired_seg.value());
         if (!_is_zero_win) {
             _rto <<= 1;
             _timers.set_timeout(_rto);

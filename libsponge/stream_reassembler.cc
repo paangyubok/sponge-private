@@ -17,11 +17,7 @@ using namespace std;
 
 StreamReassembler::StreamReassembler(const size_t capacity) :
     _output(capacity),
-    _capacity(capacity),
-    _expect(0),
-    _unassem_string(),
-    _eif(false),
-    _end_idx(0)
+    _capacity(capacity)
     {} 
 
 //! \details This function accepts a substring (aka a segment) of bytes,
@@ -73,7 +69,7 @@ void StreamReassembler::assemble() {
         _unassem_string.erase(idx);
     }
     if (remain_string.first) {
-        _unassem_string[remain_string.second.first] = remain_string.second.second;
+        _unassem_string[remain_string.second.first] = move(remain_string.second.second);
     }
 }
 

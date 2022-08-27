@@ -18,9 +18,22 @@
 template <typename Index, typename Content>
 class Timers{
   using TimeNode = struct __time_node{
-    size_t time{};
-    Index index{};
-    Content content{};
+    size_t time;
+    Index index;
+    Content content;
+    __time_node():time{}, index{}, content{} {}
+    __time_node(const Index& index_): time{}, index{index_}, content{}{}
+    __time_node(size_t time_, const Index& index_, const Content& content_)
+     : time(time_)
+     , index(index_)
+     , content(content_)
+    {}
+    friend bool operator<(const __time_node& lnode, const __time_node& rnode){
+      return lnode.index < rnode.index;
+    }
+    bool operator<(const __time_node& rnode){
+      return this->index < rnode.index;
+    }
   };
   size_t _timeout;
   std::deque<TimeNode> _timer_list{};
@@ -32,7 +45,8 @@ class Timers{
   void set_timeout(size_t timeout) {_timeout = timeout;}
   size_t get_timeout() {return _timeout;}
 
-  void start_timer(size_t time, const Index& index, const Content& content);
+  void start_new_timer(size_t time, const Index& index, const Content& content);
+  void start_old_timer(size_t time, const Index& index, const Content& content);
   bool remove_timer_before_index(const Index& index);
   std::optional<Content> expired_with_min_index(size_t now_time, Index *ret_idx);
   void restart_all_timers(size_t now_time);

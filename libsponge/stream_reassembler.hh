@@ -17,10 +17,10 @@ class StreamReassembler {
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
-    size_t _expect;
-    std::map<size_t, std::string> _unassem_string;
-    bool _eif;
-    size_t _end_idx;
+    size_t _expect{0};
+    std::map<size_t, std::string> _unassem_string{};
+    bool _eif{false};
+    size_t _end_idx{0};
     
     void assemble();
 
